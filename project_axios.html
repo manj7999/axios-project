@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Management</title>
+    <style>
+        /* Add your styles here */
+        .product-container {
+            margin-bottom: 10px;
+        }
+
+        .delete-button {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Add Product</h2>
+    <label for="sellingPrice">Selling Price:</label>
+    <input type="number" id="sellingPrice">
+
+    <label for="productName">Product Name:</label>
+    <input type="text" id="productName">
+
+    <label for="category">Choose a Category:</label>
+    <select id="category">
+        <option value="food">Food</option>
+        <option value="electronics">Electronics</option>
+        <option value="skincare">Skincare</option>
+    </select>
+
+    <button onclick="addProduct()">Add Product</button>
+
+    <h2>Products</h2>
+    <div id="foodItems" class="category-container">
+        <h3>Food Items:</h3>
+        <div id="foodList" class="product-list"></div>
+    </div>
+
+    <div id="electronicsItems" class="category-container">
+        <h3>Electronic Items:</h3>
+        <div id="electronicsList" class="product-list"></div>
+    </div>
+
+    <div id="skincareItems" class="category-container">
+        <h3>Skincare Items:</h3>
+        <div id="skincareList" class="product-list"></div>
+    </div>
+
+    <!-- Add your existing HTML code here -->
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        const apiBaseUrl = "https://crudcrud.com/api/06713f6121ff4ec0a0a22fe20a753b83/product";
+        
+        function addProduct() {
+            var sellingPrice = document.getElementById('sellingPrice').value;
+            var productName = document.getElementById('productName').value;
+            var category = document.getElementById('category').value;
+
+            var product = {
+                sellingPrice: sellingPrice,
+                productName: productName,
+                category: category
+            }
+
+            saveToApi(product, category);
+        }
+
+        function deleteProduct(category, index) {
+            var productId = productList[category + "List"][index]._id;
+            deleteFromApi(productId, category);
+        }
+
+        async function saveToApi(product, category) {
+            try {
+                const response = await axios.post(apiBaseUrl + category, product, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+
+                const data = response.data;
+                console.log('Product added:', data);
+
+                // Refresh data after adding a new product
+                loadDataFromApi(category);
+            } catch (error) {
+                console.log('Error adding product:', error.message);
+            }
+        }
+
+        async function deleteFromApi(productId, category) {
+            try {
+                const response = await axios.delete(apiBaseUrl + category + '/' + productId);
+
+                // Check if the response status is OK
+                if (response.status !== 200) {
+                    throw new Error('Error deleting product');
+                }
+
+                console.log('Product deleted successfully');
+
+                // Refresh data after deleting a product
+                loadDataFromApi(category);
+            } catch (error) {
+                console.log('Error deleting product:', error.message);
+            }
+        }
+
+        async function loadDataFromApi(category) {
+            try {
+                const response = await axios.get(apiBaseUrl + category);
+
+                const data = response.data;
+                productList[category + "List"] = data;
+
+                // Display the updated product list on the webpage
+                displayProductList(category);
+            } catch (error) {
+                console.error('Error loading data:', error.message);
+            }
+        }
+
+        function displayProductList(category) {
+            var listContainer = document.getElementById(category + 'List');
+            listContainer.innerHTML = '';
+
+            for (var i = 0; i < productList[category + 'List'].length; i++) {
+                var product = productList[category + 'List'][i];
+                var deleteButton = '<button class="delete-button" onclick="deleteProduct(\'' + category + '\',' + i + ')">Delete</button>';
+                listContainer.innerHTML += '<div class="product-container">* Product Price: ' + product.sellingPrice + ', Product Name: ' + product.productName + ', Category: ' + product.category + deleteButton + '</div>';
+            }
+        }
+
+        var productList = {
+            foodList: [],
+            electronicsList: [],
+            skincareList: []
+        };
+
+        // Call loadDataFromApi for each category on page load
+        loadDataFromApi("food");
+        loadDataFromApi("electronics");
+        loadDataFromApi("skincare");
+    </script>
+
+
+</body>
+
+</html>
